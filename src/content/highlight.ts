@@ -295,8 +295,9 @@ async function waitForDictPrepare(): Promise<WordMap> {
 
 async function readStorageAndHighlight() {
   const result = await chrome.storage.local.get(['dict', StorageKey.context])
-  fullDict = result.dict || (await waitForDictPrepare())
-  dict = await getSelectedDicts(fullDict)
+  const allDict = result.dict || (await waitForDictPrepare())
+  dict = await getSelectedDicts(allDict)
+  fullDict = dict 
   wordsKnown = await getAllKnownSync()
   contexts = result[StorageKey.context] || {}
 
@@ -406,6 +407,7 @@ function getPageStatistics() {
 window.__getPageStatistics = getPageStatistics
 
 window.__updateDicts = () => {
+  console.log('hhhhhhhhhhhhhhhhhhhhhhhhhhhh')
   document.querySelectorAll('w-mark-t').forEach(node => {
     node.remove()
   })

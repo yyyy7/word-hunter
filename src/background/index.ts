@@ -1,34 +1,41 @@
-import { Messages, WordMap, WordInfoMap, WordContext, StorageKey, LevelKey } from '../constant'
+import { Messages, WordMap, WordInfoMap, WordContext, StorageKey, LevelKey, AllDictMap } from '../constant'
 import { explainWord } from '../lib/openai'
 import { syncUpKnowns, getLocalValue, getAllKnownSync, addLocalKnownsLogs, removeLocalKnownsLogs } from '../lib/storage'
 import { settings } from '../lib/settings'
 import { triggerGoogleDriveSyncJob, syncWithDrive } from '../lib/backup/sync'
 
-let dict: WordInfoMap
+let dict: AllDictMap
 let knowns: WordMap
 
-async function readDict(): Promise<WordInfoMap> {
-  const [dict, trans] = await Promise.all([getDictTxt(), getZhTransJson()])
-  const lines = dict.split('\n')
-  const wordInfoMap: WordInfoMap = {}
-
-  let i = 0
-  lines.forEach(line => {
-    const [word, origin, level] = line.split(/\s+/)
-    wordInfoMap[word] = { o: origin, l: level as LevelKey }
-    if (trans[origin]) {
-      wordInfoMap[word].t = trans[origin]
-    }
-    if (word === origin) {
-      wordInfoMap[word].i = i
-      i++
-    }
-  })
-  return wordInfoMap
+async function readDict(): Promise<AllDictMap> {
+  const all: AllDictMap = {}
+  const [tofelDict, ieltsDict, trans] = await Promise.all([getDictTxt('tofel.txt'), getDictTxt('ielts.txt'), getZhTransJson()])
+  all['t'] = txt2WordInfoMap(tofelDict, trans)
+  all['i'] = txt2WordInfoMap(ieltsDict, trans)
+  return all
 }
 
-async function getDictTxt() {
-  const url = chrome.runtime.getURL('eng-dict.txt')
+function txt2WordInfoMap(txt:string, trans: any): WordInfoMap {
+  const lines = txt.split('\n')
+    const wordInfoMap: WordInfoMap = {}
+  
+    let i = 0
+    lines.forEach(line => {
+      const [word, origin, level] = line.split(/\s+/)
+      wordInfoMap[word] = { o: origin, l: level as LevelKey }
+      if (trans[origin]) {
+        wordInfoMap[word].t = trans[origin]
+      }
+      if (word === origin) {
+        wordInfoMap[word].i = i
+        i++
+      }
+    })
+    return wordInfoMap
+}
+
+async function getDictTxt(dictName: string) {
+  const url = chrome.runtime.getURL(dictName)
   const res = await fetch(url)
   return await res.text()
 }

@@ -1,4 +1,4 @@
-import { StorageKey, WordMap, WordInfoMap, ContextMap } from '../constant'
+import { StorageKey, WordMap, WordInfoMap, ContextMap, AllDictMap } from '../constant'
 
 const TOTAL_INDEX = 60000
 const BUCKET_SIZE = 400
@@ -23,6 +23,9 @@ function indexBitmap2Words(bucketIndex: number, bitmap: string, indexedWords: st
 function words2IndexBitmaps(words: string[], dict: WordInfoMap) {
   const bitmapMap: Record<string, string> = {}
   for (const word of words) {
+    if (typeof dict[word] === "undefined") {
+      continue
+    }
     const index = dict[word].i
     if (index !== undefined) {
       const bucket = Math.floor(index / BUCKET_SIZE)
@@ -86,19 +89,22 @@ function bitmapOr(bitmap1: string, bitmap2: string) {
 export async function syncUpKnowns(words: string[], knownsInMemory: WordMap, updateTime: number = Date.now()) {
   await migrateToBitmap()
   const toSyncKnowns = {} as Record<BucketIndex, string>
-  const dict = (await getLocalValue(StorageKey.dict)) as WordInfoMap
-  const bitmaps = words2IndexBitmaps(words, dict)
+  const allDict = (await getLocalValue(StorageKey.dict)) as AllDictMap 
 
-  const localKnownsGroupByKeys = words2IndexBitmaps(Object.keys(knownsInMemory), dict)
-
-  for (const bucket in bitmaps) {
-    const localBitmap = localKnownsGroupByKeys[bucket] ?? '0'.repeat(BUCKET_SIZE)
-    const remoteBitmap = (await getSyncValue(bucket)) ?? '0'.repeat(BUCKET_SIZE)
-    const remoteWithDeleted = bitmapAnd(remoteBitmap, localBitmap)
-    const addedWithDelete = bitmapAnd(bitmaps[bucket], localBitmap)
-    const toUploadBitmap = bitmapOr(remoteWithDeleted, addedWithDelete)
-    if (toUploadBitmap !== remoteBitmap) {
-      toSyncKnowns[bucket] = toUploadBitmap
+  for (const dict in allDict) {
+    const bitmaps = words2IndexBitmaps(words, allDict[dict])
+  
+    const localKnownsGroupByKeys = words2IndexBitmaps(Object.keys(knownsInMemory), allDict[dict])
+  
+    for (const bucket in bitmaps) {
+      const localBitmap = localKnownsGroupByKeys[bucket] ?? '0'.repeat(BUCKET_SIZE)
+      const remoteBitmap = (await getSyncValue(bucket)) ?? '0'.repeat(BUCKET_SIZE)
+      const remoteWithDeleted = bitmapAnd(remoteBitmap, localBitmap)
+      const addedWithDelete = bitmapAnd(bitmaps[bucket], localBitmap)
+      const toUploadBitmap = bitmapOr(remoteWithDeleted, addedWithDelete)
+      if (toUploadBitmap !== remoteBitmap) {
+        toSyncKnowns[bucket] = toUploadBitmap
+      }
     }
   }
 

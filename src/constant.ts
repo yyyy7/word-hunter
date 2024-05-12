@@ -5,6 +5,8 @@ export const Levels = [
   ['4', 'CET-4'],
   ['6', 'CET-6'],
   ['g', 'GRE 8000'],
+  ['t', 'TOFEL'],
+  ['i', 'IELTS'],
   ['o', '∞']
 ] as const
 
@@ -17,6 +19,8 @@ export type WordInfo = {
   i?: number
 }
 export type WordInfoMap = Record<string, WordInfo>
+
+export type AllDictMap = Record<string, WordInfoMap>
 
 export type WordMap = Record<string, LevelKey>
 

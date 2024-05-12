@@ -1,6 +1,6 @@
 import { createSignal } from 'solid-js'
 import { getSyncValue } from './storage'
-import { StorageKey, LevelKey, WordInfoMap } from '../constant'
+import { StorageKey, LevelKey, WordInfoMap, AllDictMap } from '../constant'
 import { debounce } from '../lib/utils'
 import { triggerGoogleDriveSyncJob } from './backup/sync'
 
@@ -39,7 +39,7 @@ export const DEFAULT_SETTINGS = {
   mouseHideDelay: 200,
   volume: 95,
   autoPauseYoutubeVideo: false,
-  levels: ['p', 'm', 'h', '4', '6', 'g', 'o'] as LevelKey[],
+  levels: ['p', 'm', 'h', '4', '6', 'g', 'o', 't', 'i'] as LevelKey[],
   openai: {
     apiKey: '',
     apiProxy: 'https://api.openai.com/v1/chat/completions',
@@ -130,13 +130,14 @@ function fillUpNewDefaultSettingFiled(target: Record<string, any>, source: Recor
   return target
 }
 
-export async function getSelectedDicts(dict: WordInfoMap) {
+export async function getSelectedDicts(dict: AllDictMap) {
   const levels = settings().levels
+  console.log(levels)
   const newDict: WordInfoMap = {}
-  for (const word in dict) {
-    const level = dict[word].l ?? 'o'
-    if (levels.includes(level)) {
-      newDict[word] = dict[word]
+  for (const level of levels) {
+  console.log(level)
+    for (const word in dict[level]) {
+      newDict[word] = dict[level][word]
     }
   }
   return newDict
