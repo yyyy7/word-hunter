@@ -51,9 +51,10 @@ function getIndexedWords(dict: WordInfoMap) {
 
 export async function getAllKnownSync(loadedDict?: WordInfoMap) {
   if (!(await getSyncValue(DATA_MIGRATED))) {
+
     return await _getLegacyAllKnowns()
   } else {
-    const dict = loadedDict ?? ((await getLocalValue(StorageKey.dict)) as WordInfoMap)
+    const dict = loadedDict ?? ((await getLocalValue(StorageKey.flattenDict)) as WordInfoMap)
     const indexedWords = getIndexedWords(dict)
     const record = (await chrome.storage.sync.get(BUCKET_INDICES)) as Record<string, string>
     const words = Object.entries(record)
@@ -89,12 +90,12 @@ function bitmapOr(bitmap1: string, bitmap2: string) {
 export async function syncUpKnowns(words: string[], knownsInMemory: WordMap, updateTime: number = Date.now()) {
   await migrateToBitmap()
   const toSyncKnowns = {} as Record<BucketIndex, string>
-  const allDict = (await getLocalValue(StorageKey.dict)) as AllDictMap 
+  const dict = (await getLocalValue(StorageKey.flattenDict)) as WordInfoMap
 
-  for (const dict in allDict) {
-    const bitmaps = words2IndexBitmaps(words, allDict[dict])
+
+    const bitmaps = words2IndexBitmaps(words, dict)
   
-    const localKnownsGroupByKeys = words2IndexBitmaps(Object.keys(knownsInMemory), allDict[dict])
+    const localKnownsGroupByKeys = words2IndexBitmaps(Object.keys(knownsInMemory), dict)
   
     for (const bucket in bitmaps) {
       const localBitmap = localKnownsGroupByKeys[bucket] ?? '0'.repeat(BUCKET_SIZE)
@@ -106,7 +107,6 @@ export async function syncUpKnowns(words: string[], knownsInMemory: WordMap, upd
         toSyncKnowns[bucket] = toUploadBitmap
       }
     }
-  }
 
   if (Object.keys(toSyncKnowns).length > 0) {
     try {
@@ -152,7 +152,8 @@ export async function mergeKnowns(gDriveKnowns: WordMap, gDriveUpdateTime: numbe
   }
 
   // only keep origin knowns, this is a clean strategy for the old version of the extension
-  const dict = (await getLocalValue(StorageKey.dict)) as WordInfoMap
+  const dict = (await getLocalValue(StorageKey.flattenDict)) as WordInfoMap
+
   let mergedOriginKnowns: WordMap
   if (dict) {
     mergedOriginKnowns = {}

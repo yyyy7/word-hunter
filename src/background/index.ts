@@ -1,4 +1,4 @@
-import { Messages, WordMap, WordInfoMap, WordContext, StorageKey, LevelKey, AllDictMap } from '../constant'
+import { Messages, WordMap, AllDictMap, WordContext, StorageKey, LevelKey, WordInfoMap } from '../constant'
 import { explainWord } from '../lib/openai'
 import { syncUpKnowns, getLocalValue, getAllKnownSync, addLocalKnownsLogs, removeLocalKnownsLogs } from '../lib/storage'
 import { settings } from '../lib/settings'
@@ -6,9 +6,10 @@ import { triggerGoogleDriveSyncJob, syncWithDrive } from '../lib/backup/sync'
 
 let dict: AllDictMap
 let knowns: WordMap
+let i = 0
 
 async function readDict(): Promise<AllDictMap> {
-  const all: AllDictMap = {}
+  let all: AllDictMap = {}
   const [tofelDict, ieltsDict, trans] = await Promise.all([getDictTxt('tofel.txt'), getDictTxt('ielts.txt'), getZhTransJson()])
   all['t'] = txt2WordInfoMap(tofelDict, trans)
   all['i'] = txt2WordInfoMap(ieltsDict, trans)
@@ -19,7 +20,6 @@ function txt2WordInfoMap(txt:string, trans: any): WordInfoMap {
   const lines = txt.split('\n')
     const wordInfoMap: WordInfoMap = {}
   
-    let i = 0
     lines.forEach(line => {
       const [word, origin, level] = line.split(/\s+/)
       wordInfoMap[word] = { o: origin, l: level as LevelKey }
@@ -265,6 +265,17 @@ chrome.runtime.onInstalled.addListener(async details => {
       knowns = knowns ?? (await getAllKnownSync())
       updateBadge(knowns)
     })
+
+    const levels = ["i", "t"]
+    const flattenDict: WordInfoMap = {}
+    for (const level of levels) {
+      for (const word in localDict[level]) {
+        flattenDict[word] = localDict[level][word]
+      }
+    }
+    chrome.storage.local.set({ flattenDict: flattenDict}, async () => {
+      console.log('[storage] dict set up when ' + details.reason)
+    })
   })
 })
 
@@ -319,7 +330,7 @@ chrome.runtime.onMessage.addListener(async msg => {
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === 'word-hunter') {
     const word = info.selectionText?.trim()?.toLowerCase()
-    dict = dict ?? (await getLocalValue(StorageKey.dict))
+    dict = dict ?? (await getLocalValue(StorageKey.flattenDict))
     if (word && word in dict) {
       const originFormWord = dict[word]?.o ?? word
       knowns = knowns ?? (await getAllKnownSync())

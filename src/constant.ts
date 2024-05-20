@@ -44,6 +44,7 @@ export const classes = {
 export enum StorageKey {
   // local storage keys
   'dict' = 'dict',
+  'flattenDict' = 'flattenDict',
   'context' = 'context',
   'context_update_timestamp' = 'context_update_timestamp',
   // sync storage keys
