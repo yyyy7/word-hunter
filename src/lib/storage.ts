@@ -229,6 +229,9 @@ export async function removeLocalKnownsLogs(word: string) {
 
 // clean up unused context words
 export function cleanupContexts(contexts: ContextMap, known: WordMap) {
+  if (typeof contexts === "undefined") {
+    return {}
+  }
   const cleanContexts = Object.fromEntries(
     Object.entries(contexts).filter(([word]) => {
       return !(word in known)

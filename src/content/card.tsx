@@ -652,6 +652,19 @@ function onKeyUp(e: KeyboardEvent) {
   }
 }
 
+function onDBClick(event) {
+    console.log(event)
+    const word:string = window.getSelection()?.toString()
+    setCurWord(word)
+    adjustCardPosition(event.target.getBoundingClientRect())
+    clearTimerHideRef()
+      timerShowRef && clearTimeout(timerShowRef)
+      timerShowRef = window.setTimeout(() => {
+        showPopup()
+      }, 200)
+    //onMouseMove(event)
+}
+
 function bindEvents() {
   document.addEventListener('mousemove', preMouseMove)
   document.addEventListener('keydown', onKeyDown)
@@ -659,6 +672,7 @@ function bindEvents() {
   // hide popup when click outside card
   document.addEventListener('click', onMouseClick)
   document.addEventListener('auxclick', onAuxclick)
+  document.addEventListener('dblclick', onDBClick)
 }
 
 function unbindEvents() {
@@ -667,4 +681,5 @@ function unbindEvents() {
   document.removeEventListener('keyup', onKeyUp)
   document.removeEventListener('click', onMouseClick)
   document.removeEventListener('auxclick', onAuxclick)
+  document.removeEventListener('dblclick', onDBClick)
 }

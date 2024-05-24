@@ -471,5 +471,6 @@ export async function init() {
   await readStorageAndHighlight()
   observeDomChange()
   listenBackgroundMessage()
+  
   isInited = true
 }

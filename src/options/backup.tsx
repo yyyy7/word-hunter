@@ -127,7 +127,8 @@ export const Backup = () => {
       toastS('sync success')
     } catch (e: any) {
       setSyning(false)
-      setSyncFailedMessage(e.message)
+      // setSyncFailedMessage(e.message)
+      console.log(e)
       toastE('sync failed: ️' + e.message)
     }
   }
