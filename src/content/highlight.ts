@@ -10,25 +10,8 @@ import {
   cnRegex
 } from '../constant'
 import { createSignal } from 'solid-js'
-import { getDocumentTitle, getFaviconUrl, settings, getSelectedDicts, getAllKnownSync } from '../lib'
+import { getDocumentTitle, getFaviconUrl, settings, getSelectedDicts, getAllKnownSync, debounce } from '../lib'
 import { getMessagePort } from '../lib/port'
-
-declare global {
-  interface Highlight extends Set<Range> {
-    readonly priority: number
-  }
-
-  const Highlight: {
-    prototype: Highlight
-    new (...initialRanges: Array<Range>): Highlight
-  }
-
-  type HighlightRegistry = Map<string, Highlight>
-
-  namespace CSS {
-    const highlights: HighlightRegistry
-  }
-}
 
 export const unknownHL = new Highlight()
 export const contextHL = new Highlight()
@@ -39,11 +22,12 @@ let wordsKnown: WordMap = {}
 let fullDict: WordInfoMap = {}
 let dict: WordInfoMap = {}
 let contexts: ContextMap = {}
+let highlightContainerMap = new WeakMap<Node, Set<Range>>()
 
 export const [zenExcludeWords, setZenExcludeWords] = createSignal<string[]>([])
 export const [wordContexts, setWordContexts] = createSignal<WordContext[]>([])
 
-export function getRangeWord(range: Range) {
+export function getRangeWord(range: AbstractRange) {
   return range.toString().toLowerCase()
 }
 
@@ -65,6 +49,7 @@ function _makeAsKnown(word: string) {
       const rangeWord = getRangeWord(range)
       if (isOriginFormSame(rangeWord, word)) {
         hl.delete(range)
+        detachRange(range as Range)
       }
     })
   })
@@ -143,23 +128,23 @@ function _makeAsAllKnown(words: string[]) {
       const rangeWord = getRangeWord(range)
       if (words.includes(rangeWord)) {
         hl.delete(range)
+        detachRange(range as Range)
       }
     })
   })
 }
 
+function detachRange(range: Range) {
+  highlightContainerMap.get(range.startContainer.parentNode!)?.delete(range)
+  range.detach()
+}
+
 function getTextNodes(node: Node): Text[] {
   const textNodes = []
-  const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, (node: Node) => {
-    if (invalidTags.includes(node.parentElement?.tagName ?? '')) {
-      return NodeFilter.FILTER_REJECT
-    } else {
-      return NodeFilter.FILTER_ACCEPT
-    }
-  })
+  const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT)
 
   while (walker.nextNode()) {
-    textNodes.push(walker.currentNode as Text)
+    !invalidTags.includes(walker.currentNode.parentElement?.tagName ?? '') && textNodes.push(walker.currentNode as Text)
   }
 
   return textNodes
@@ -192,15 +177,9 @@ export function getRangeAtPoint(e: MouseEvent) {
   const element = e.target as HTMLElement
   if (element !== lastMouseOverElement) {
     lastMouseOverElement = element
-    rangesWithRectAtMouseOverCache = [...unknownHL, ...contextHL]
-      .map(range => {
-        if (element === range.commonAncestorContainer?.parentElement) {
-          const rect = range.getBoundingClientRect()
-          return { range, rect }
-        }
-        return null
-      })
-      .filter(r => r !== null) as { range: Range; rect: DOMRect }[]
+    rangesWithRectAtMouseOverCache = Array.from(highlightContainerMap.get(element) ?? []).map(range => {
+      return { range, rect: range.getBoundingClientRect() }
+    })
   }
 
   const rangeAtPoint = rangesWithRectAtMouseOverCache.find(
@@ -210,15 +189,51 @@ export function getRangeAtPoint(e: MouseEvent) {
   return rangeAtPoint?.range ?? null
 }
 
+let transObjects: {
+  range: Range
+  pNode: Element
+  trans: string
+  inserted?: boolean
+}[] = []
+
+const intersectionObserver = new IntersectionObserver(entries => {
+  entries.forEach(
+    entry => {
+      const el = entry.target as HTMLElement
+
+      if (entry.isIntersecting || entry.intersectionRatio > 0) {
+        transObjects.forEach(obj => {
+          const { range, pNode, trans } = obj
+          if (!obj.inserted && pNode === el) {
+            const transNode = document.createElement('w-mark-t')
+            transNode.textContent = `(${cnRegex.exec(trans)?.[0] ?? trans})`
+            transNode.dataset.trans = `(${trans})`
+            if (range.endContainer.nextSibling?.nodeName !== 'W-MARK-T') {
+              range.insertNode(transNode)
+            }
+            range.detach()
+            obj.inserted = true
+            intersectionObserver.unobserve(pNode)
+          }
+        })
+        debounce(() => {
+          transObjects = transObjects.filter(obj => !obj.inserted)
+        }, 200)
+      }
+    },
+    { rootMargin: '50vh 0 50vh 0', threshold: 0 }
+  )
+})
+
 const segmenterEn = new Intl.Segmenter('en-US', { granularity: 'word' })
 function highlightTextNode(node: CharacterData, dict: WordInfoMap, wordsKnown: WordMap, word?: string) {
   if (node.parentElement?.tagName === 'W-MARK-T') return
   const text = node.nodeValue || ''
+  if (!text.trim()) return
+
   let toHighlightWords = []
   const segments = segmenterEn.segment(text)
 
-  const totalLength = node.length
-  let preEnd = 0
   let curNode = node
 
   for (const segment of segments) {
@@ -228,8 +243,9 @@ function highlightTextNode(node: CharacterData, dict: WordInfoMap, wordsKnown: W
       if (!(originFormWord in wordsKnown)) {
         if (word && word !== originFormWord) continue
         const range = new Range()
-        range.setStart(curNode, segment.index - preEnd)
-        range.setEnd(curNode, segment.index - preEnd + w.length)
+        range.setStart(curNode, segment.index)
+        let endOffset = segment.index + w.length
+        range.setEnd(curNode, endOffset)
 
         const trans = settings().showCnTrans && fullDict[originFormWord]?.t
         if (trans) {
@@ -237,21 +253,22 @@ function highlightTextNode(node: CharacterData, dict: WordInfoMap, wordsKnown: W
           if (range.endContainer.nextSibling?.nodeName === 'W-MARK-T') {
             continue
           }
-          // insert trans tag after range
-          const newRange = range.cloneRange()
+
+          const newRange = new Range()
+          newRange.setStart(curNode, endOffset)
           newRange.collapse(false)
-          const transNode = document.createElement('w-mark-t')
-          transNode.textContent = `(${cnRegex.exec(trans)?.[0] ?? trans})`
-          transNode.dataset.trans = `(${trans})`
-          // TODO: insertNode performance is terrible, need to optimize
-          newRange.insertNode(transNode)
-          newRange.detach()
-          // if transNode is not the last node, move cursor to next text node
-          preEnd = segment.index + w.length
-          if (preEnd < totalLength) {
-            curNode = transNode.nextSibling as Text
-          }
+
+          transObjects.push({
+            range: newRange,
+            pNode: curNode.parentElement!,
+            trans
+          })
+
+          intersectionObserver.observe(curNode.parentElement!)
         }
+
+        let sameContainerRanges = highlightContainerMap.get(node.parentElement!) ?? new Set()
+        highlightContainerMap.set(node.parentElement!, sameContainerRanges.add(range))
 
         const contextLength = getWordContexts(w)?.length ?? 0
         if (contextLength > 0) {
@@ -308,19 +325,7 @@ function resetHighlight() {
   dict = {}
   unknownHL.clear()
   contextHL.clear()
-}
-
-let cleanRangeTaskTimer: number
-function cleanRanges() {
-  window.requestIdleCallback(() => {
-    ;[unknownHL, contextHL].forEach(hl => {
-      hl.forEach(range => {
-        if (!range.toString()) {
-          hl.delete(range)
-        }
-      })
-    })
-  })
+  highlightContainerMap = new WeakMap()
 }
 
 function observeDomChange() {
@@ -339,11 +344,15 @@ function observeDomChange() {
             return false
           }
           if (node.nodeType === Node.TEXT_NODE) {
-            if (isTextNodeValid(node as Text)) {
+            if (isTextNodeValid(node as Text) && node.nodeValue) {
               highlightTextNode(node as Text, dict, wordsKnown)
             }
           } else {
-            if ((node as HTMLElement).isContentEditable || node.parentElement?.isContentEditable) {
+            if (
+              (node as HTMLElement).isContentEditable ||
+              node.parentElement?.isContentEditable ||
+              node.nodeName?.toUpperCase() === 'W-MARK-T'
+            ) {
               return false
             }
             highlight(node)
@@ -352,8 +361,16 @@ function observeDomChange() {
 
         // when remove node, remove highlight range
         if (mutation.removedNodes.length > 0) {
-          cleanRangeTaskTimer && clearTimeout(cleanRangeTaskTimer)
-          cleanRangeTaskTimer = setTimeout(cleanRanges, 100)
+          mutation.removedNodes.forEach(node => {
+            if (highlightContainerMap.has(node)) {
+              const ranges = highlightContainerMap.get(node)!
+              ranges.forEach(r => {
+                unknownHL.delete(r)
+                contextHL.delete(r)
+              })
+              highlightContainerMap.delete(node)
+            }
+          })
 
           // for some sites like calibre reader server
           // it uses `document.body.innerHTML` when page changes between book thumb and book contents
@@ -382,11 +399,11 @@ function observeDomChange() {
 function getHighlightCount() {
   const contextWordsSet = new Set()
   const unknownWordSet = new Set()
-  unknownHL.forEach((range: Range) => {
+  unknownHL.forEach(range => {
     const word = getOriginForm(getRangeWord(range))
     unknownWordSet.add(word)
   })
-  contextHL.forEach((range: Range) => {
+  contextHL.forEach(range => {
     const word = getOriginForm(getRangeWord(range))
     contextWordsSet.add(word)
   })
@@ -410,6 +427,7 @@ window.__updateDicts = () => {
   console.log('hhhhhhhhhhhhhhhhhhhhhhhhhhhh')
   document.querySelectorAll('w-mark-t').forEach(node => {
     node.remove()
+    transObjects = []
   })
   resetHighlight()
   readStorageAndHighlight()
