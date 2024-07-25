@@ -20,13 +20,15 @@ import {
   zenExcludeWords,
   setZenExcludeWords,
   getWordAllTenses,
-  getRangeAtPoint
+  getRangeAtPoint,
+  getOriginForm
 } from './highlight'
 import { getMessagePort } from '../lib/port'
 import { Dict } from './dict'
 import { adapters, AdapterKey } from './adapters'
 import { getWordContext, safeEmphasizeWordInText, getFaviconByDomain, settings, explode } from '../lib'
 import { readBlacklist } from '../lib/blacklist'
+import { markKnown, getKnown } from '../lib'
 
 let timerShowRef: number
 let timerHideRef: number
@@ -63,6 +65,7 @@ export const WhCard = customElement('wh-card', () => {
   const onKnown = (e: MouseEvent | KeyboardEvent) => {
     e.preventDefault()
     const word = curWord()
+    markKnown(getOriginForm(word))
     markAsKnown(word)
     setCurWord('')
     hidePopupDelay(0)

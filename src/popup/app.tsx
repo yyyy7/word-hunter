@@ -60,6 +60,19 @@ export const App = () => {
     }
   }
 
+  const onUnknownWords = async () => {
+    if (chrome.sidePanel?.open) {
+      const win = await chrome.windows.getCurrent()
+      window.close()
+      chrome.sidePanel.setOptions({ path: 'src/unknownWords.html' })
+      chrome.sidePanel.open({ windowId: win.id! })
+    } else {
+      chrome.tabs.create({
+        url: chrome.runtime.getURL('src/unknownWords.html')
+      })
+    }
+  }
+
   const getBannedState = async () => {
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
     const host = new URL(tabs[0].url!).host
@@ -102,6 +115,10 @@ export const App = () => {
           <button onclick={onKnownLogs}>
             ️<img src={chrome.runtime.getURL('icons/logs.png')} width="20" height="20" />
             Daily Logs
+          </button>
+          <button onclick={onUnknownWords}>
+            ️<img src={chrome.runtime.getURL('icons/logs.png')} width="20" height="20" />
+            Unknown Words on current page
           </button>
           <button onclick={onToggleBlacklist}>
             ️

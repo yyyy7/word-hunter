@@ -10,7 +10,7 @@ import {
   cnRegex
 } from '../constant'
 import { createSignal } from 'solid-js'
-import { getDocumentTitle, getFaviconUrl, settings, getSelectedDicts, getAllKnownSync, debounce } from '../lib'
+import { getDocumentTitle, getFaviconUrl, settings, getSelectedDicts, getAllKnownSync, debounce, getKnown } from '../lib'
 import { getMessagePort } from '../lib/port'
 
 export const unknownHL = new Highlight()
@@ -23,6 +23,7 @@ let fullDict: WordInfoMap = {}
 let dict: WordInfoMap = {}
 let contexts: ContextMap = {}
 let highlightContainerMap = new WeakMap<Node, Set<Range>>()
+let unknownWords = []
 
 export const [zenExcludeWords, setZenExcludeWords] = createSignal<string[]>([])
 export const [wordContexts, setWordContexts] = createSignal<WordContext[]>([])
@@ -132,6 +133,19 @@ function _makeAsAllKnown(words: string[]) {
       }
     })
   })
+}
+
+function _setAllUnknown() {
+    let words:string[] = [] 
+    unknownHL.forEach(range => {
+      const word = getOriginForm(getRangeWord(range))
+      if (!words.includes(word)) {
+        words.push(word)
+      }
+    })
+    chrome.storage.local.set({
+      [StorageKey.unknown_words_on_current_page]: words
+    })
 }
 
 function detachRange(range: Range) {
@@ -278,6 +292,7 @@ function highlightTextNode(node: CharacterData, dict: WordInfoMap, wordsKnown: W
         }
 
         toHighlightWords.push(w)
+        
       }
     }
   }
@@ -315,10 +330,12 @@ async function readStorageAndHighlight() {
   const allDict = result.dict || (await waitForDictPrepare())
   dict = await getSelectedDicts(allDict)
   fullDict = dict 
-  wordsKnown = await getAllKnownSync()
+  wordsKnown = await getKnown(); //getAllKnownSync()
+
   contexts = result[StorageKey.context] || {}
 
   highlight(document.body)
+  _setAllUnknown()
 }
 
 function resetHighlight() {

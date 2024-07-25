@@ -56,6 +56,7 @@ export enum StorageKey {
   'sync_failed_message' = 'sync_failed_message',
   'mobile_auth_token' = 'mobile_auth_token',
   'local_knowns_log' = 'local_knowns_log',
+  'unknown_words_on_current_page' = "unknown_words_on_current_page",
   'version' = 'version'
 }
 
@@ -100,3 +101,5 @@ export const invalidTags = [
 export const wordRegex = /^[a-z]+$/i
 // match Chinese characters but not in brackets
 export const cnRegex = /[\u4E00-\u9FA5…]+(?![^(]*(\)|\）))/
+
+export const serverUrl = "http://localhost:7127"

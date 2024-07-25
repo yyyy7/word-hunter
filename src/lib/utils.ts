@@ -1,3 +1,5 @@
+import { serverUrl, WordMap } from "../constant"
+
 export const safeEmphasizeWordInText = (text: string = '', word: string, tag: string = 'b') => {
   const regex = new RegExp('(<.*>)?(' + word + ')(</.*>)?', 'gi')
   return text.replaceAll('<', '&lt;').replaceAll('>', '&gt;').replace(regex, `$1<${tag}>$2</${tag}>$3`)
@@ -93,4 +95,22 @@ export function debounce<T extends (...args: any[]) => void>(func: T, delay: num
       func(args)
     }, delay)
   }
+}
+
+export async function getKnown() {
+  const res = await fetch(serverUrl +  "/api/words", {method: 'GET'})
+  const knownWords:string[] = await res.json()
+  return Object.fromEntries(knownWords.map(word => [word, 'o'])) as WordMap
+}
+
+export function markKnown(word:string) {
+  fetch(serverUrl + "/api/words",
+  {
+    method: 'POST',
+    body: JSON.stringify({ word: word}),
+    headers: {
+      'Content-Type': 'application/json',
+    }
+  }
+  ).then(res => res.json()).then(json => console.log(json)).catch(err => console.log(err))
 }
