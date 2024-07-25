@@ -330,7 +330,8 @@ async function readStorageAndHighlight() {
   const allDict = result.dict || (await waitForDictPrepare())
   dict = await getSelectedDicts(allDict)
   fullDict = dict 
-  wordsKnown = await getKnown(); //getAllKnownSync()
+  //wordsKnown = await getKnown(); //getAllKnownSync()
+  wordsKnown = await getAllKnownSync()
 
   contexts = result[StorageKey.context] || {}
 

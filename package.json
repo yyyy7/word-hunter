@@ -39,5 +39,6 @@
     "solid-element": "^1.8.0",
     "solid-js": "^1.8.16",
     "tailwindcss": "^3.4.3"
-  }
+  },
+  "packageManager": "pnpm@7.10.0+sha512.0c68dc2773801d1b72a9925e93a3b3a8b8abee1a8d69ac97e05c4c2925e59e981045566c5368edca6fc5951d4f4b85664b2fa9d4fb3f68fcfada21cd1b479179"
 }

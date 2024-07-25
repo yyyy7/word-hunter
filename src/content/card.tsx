@@ -65,7 +65,7 @@ export const WhCard = customElement('wh-card', () => {
   const onKnown = (e: MouseEvent | KeyboardEvent) => {
     e.preventDefault()
     const word = curWord()
-    markKnown(getOriginForm(word))
+    //markKnown(getOriginForm(word))
     markAsKnown(word)
     setCurWord('')
     hidePopupDelay(0)
