@@ -206,12 +206,11 @@ export async function addLocalKnownsLogs(words: string[]) {
   const localKnownsLogs: KnownsLogs = (await getLocalValue(StorageKey.local_knowns_log)) ?? []
   const unknownWordsCurPage: string[] = (await getLocalValue(StorageKey.unknown_words_on_current_page)) ?? []
   const now = Date.now()
-  let newUnknownWords: string[] = []
+  let newUnknownWords: string[] = unknownWordsCurPage.filter(w => !words.includes(w))
   words.forEach(word => {
     if (!localKnownsLogs.find(([w]) => w === word)) {
       localKnownsLogs.push([word, now])
     }
-    newUnknownWords = unknownWordsCurPage.filter(w => w != word)
   })
   chrome.storage.local.set({
     // record latest 1000 logs

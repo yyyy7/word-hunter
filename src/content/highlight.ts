@@ -313,7 +313,7 @@ function highlight(node: Node, word?: string) {
   }
 }
 
-async function waitForDictPrepare(): Promise<WordMap> {
+export async function waitForDictPrepare(): Promise<WordMap> {
   return new Promise(resolve => {
     const listener = (changes: { [key: string]: chrome.storage.StorageChange }, namespace: string) => {
       if (namespace === 'local' && changes['dict']) {
