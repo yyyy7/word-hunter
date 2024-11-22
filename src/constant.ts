@@ -102,4 +102,7 @@ export const wordRegex = /^[a-z]+$/i
 // match Chinese characters but not in brackets
 export const cnRegex = /[\u4E00-\u9FA5…]+(?![^(]*(\)|\）))/
 
-export const serverUrl = "http://localhost:7127"
+
+//export const serverUrl = "http://localhost:7127/"
+//export const serverUrl = "https://124.222.18.132:3000/"
+export const serverUrl = "https://fxxkccp.online/"

@@ -1,4 +1,5 @@
 import { StorageKey, WordMap, WordInfoMap, ContextMap, AllDictMap } from '../constant'
+import { markKnown } from './utils'
 
 const TOTAL_INDEX = 60000
 const BUCKET_SIZE = 400
@@ -91,6 +92,7 @@ export async function syncUpKnowns(words: string[], knownsInMemory: WordMap, upd
   await migrateToBitmap()
   const toSyncKnowns = {} as Record<BucketIndex, string>
   const dict = (await getLocalValue(StorageKey.flattenDict)) as WordInfoMap
+  markKnown(words)
 
 
     const bitmaps = words2IndexBitmaps(words, dict)

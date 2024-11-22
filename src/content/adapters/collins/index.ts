@@ -1,5 +1,5 @@
 import dictStyles from './index.css?inline'
-import type { Adapter } from '../type'
+import type { Adapter, DictResult } from '../type'
 import { fetchText } from '../fetch'
 
 const cache: Record<string, string> = {}
@@ -27,6 +27,19 @@ export class CollinsDict implements Adapter {
     }
   }
 
+  async lookupD({ word }: { word: string; text?: string }) {
+    if (cache[word]) return Promise.resolve(cache[word])
+    try {
+      const doc = await this.fetchDocument(word)
+      const data = this.parse(doc)
+      console.log(data)
+      return data
+    } catch (e) {
+      console.warn(e)
+      return null
+    }
+  }
+
   private async fetchDocument(word: string) {
     const url = this.getPageUrl(word)
     const html = await fetchText(url)
@@ -37,6 +50,108 @@ export class CollinsDict implements Adapter {
   getPageUrl(word: string) {
     return `${this.apiBase}${encodeURIComponent(word.replace(/\s+/g, '-'))}`
   }
+
+  parse(doc: Document): DictResult {
+    const result: DictResult = {
+      word: '',
+      phonetics: [],
+      meanings: [],
+      wordForms: {
+        plural: undefined,
+        past: undefined,
+        pastParticiple: undefined,
+        present: undefined,
+        comparative: undefined,
+        superlative: undefined
+      }
+    }
+
+    // 提取单词
+    const wordEl = doc.querySelector('.h2_entry')
+    result.word = wordEl?.textContent?.trim() ?? ''
+
+    // 提取音标
+    const el = doc.querySelector('.pron.type-ipa')
+    if (el) {
+      const text = el.textContent?.trim()
+      const audio = el.querySelector('.audio_play_button')?.getAttribute('data-src-mp3') ?? undefined
+      if (text) {
+        result.phonetics.push({ text, audio })
+      }
+    }
+    
+
+    // 提取释义
+    doc.querySelectorAll('.hom').forEach(block => {
+      const partOfSpeech = block.querySelector('.pos')?.textContent?.trim() ?? ''
+      const definitions: DictResult['meanings'][0]['definitions'] = []
+
+      block.querySelectorAll('.sense').forEach(sense => {
+        const def = sense.querySelector('.def')?.textContent?.trim()
+        const example = sense.querySelector('.cit.type-example')?.textContent?.trim()
+        
+        if (def) {
+          definitions.push({
+            definition: def,
+            example: example
+          })
+        }
+      })
+
+      if (definitions.length > 0) {
+        result.meanings.push({
+          partOfSpeech,
+          definitions
+        })
+      }
+    })
+
+    // Collins 词典中提取单词变形
+  const forms = doc.getElementsByClassName("form inflected_forms type-infl")[0]
+  console.log(forms)
+  if (forms) {
+    const types = forms.querySelectorAll('.type-gram')
+    const values = forms.querySelectorAll('.orth')
+
+    for (let i = 0; i < types.length; i++) {
+      const type = types[i].textContent?.trim().toLowerCase()
+      const value = values[i]?.textContent?.trim()
+
+      console.log(type)
+      console.log(value)
+      if (type && value) {
+        switch(true) {
+          case type.includes('plural') || type === 'pl':
+            result.wordForms.plural = value
+            break
+          case type.includes('past tense') || type === 'pt':
+            result.wordForms.past = value
+            break
+          case type.includes('past participle') || type === 'pp':
+            result.wordForms.pastParticiple = value
+            break
+          case type.includes('present participle'):
+            result.wordForms.present = value
+            break
+          case type.includes('comparative'):
+            result.wordForms.comparative = value
+            break
+          case type.includes('superlative'):
+            result.wordForms.superlative = value
+            break
+          case type.includes('3rd person singular present tense'):
+            result.wordForms.thrid = value
+            break
+          default:
+            result.wordForms[type] = value
+        }
+      }
+    }
+  }
+
+    return result
+  }
+  
 
   private parseDocument(doc: Document, word: string) {
     const root = doc.querySelector('#main_content .res_cell_center')

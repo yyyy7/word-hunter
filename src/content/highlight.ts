@@ -51,6 +51,7 @@ function _makeAsKnown(word: string) {
       if (isOriginFormSame(rangeWord, word)) {
         hl.delete(range)
         detachRange(range as Range)
+        console.log(hl)
       }
     })
   })
@@ -149,6 +150,11 @@ function _setAllUnknown() {
 }
 
 function detachRange(range: Range) {
+  console.log(range.startContainer)
+  const container = range.startContainer
+  if (container.nextSibling?.nodeName === 'W-MARK-T') {
+    container.parentNode?.removeChild(container.nextSibling)
+  }
   highlightContainerMap.get(range.startContainer.parentNode!)?.delete(range)
   range.detach()
 }
@@ -330,8 +336,8 @@ async function readStorageAndHighlight() {
   const allDict = result.dict || (await waitForDictPrepare())
   dict = await getSelectedDicts(allDict)
   fullDict = dict 
-  //wordsKnown = await getKnown(); //getAllKnownSync()
-  wordsKnown = await getAllKnownSync()
+  wordsKnown = await getKnown(); //getAllKnownSync()
+  //wordsKnown = await getAllKnownSync()
 
   contexts = result[StorageKey.context] || {}
 

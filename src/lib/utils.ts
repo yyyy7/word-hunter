@@ -98,19 +98,24 @@ export function debounce<T extends (...args: any[]) => void>(func: T, delay: num
 }
 
 export async function getKnown() {
-  const res = await fetch(serverUrl +  "/api/words", {method: 'GET'})
+  const res = await fetch(serverUrl +  "api/words", {
+    method: 'GET',
+    referrerPolicy: "unsafe-url" 
+  })
   const knownWords:string[] = await res.json()
   return Object.fromEntries(knownWords.map(word => [word, 'o'])) as WordMap
 }
 
-export function markKnown(word:string) {
-  fetch(serverUrl + "/api/words",
+export function markKnown(words:string[]) {
+  console.log(location.hostname)
+  fetch(serverUrl + "api/words",
   {
     method: 'POST',
-    body: JSON.stringify({ word: word}),
+    body: JSON.stringify({ words: words}),
     headers: {
       'Content-Type': 'application/json',
-    }
+    },
+    referrerPolicy: "unsafe-url" 
   }
   ).then(res => res.json()).then(json => console.log(json)).catch(err => console.log(err))
 }

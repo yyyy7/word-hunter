@@ -5,12 +5,14 @@ export function genMarkStyle() {
   const unknownSelector = `::highlight(wh-unknown)`
   const contextSelector = `::highlight(wh-context)`
   const markStyle = settings().markStyle ?? MarkStyles[0]
+  console.log(markStyle)
   const textColor0 = invertHexColor(settings()['colors'][0])
   const textColor1 = invertHexColor(settings()['colors'][1])
   const bgColor0 = settings()['colors'][0]
   const bgColor1 = settings()['colors'][1]
 
   const cssVars = `
+    
     :root {
         --wh-text-color-0: ${textColor0};
         --wh-bg-color-0: ${bgColor0};
@@ -36,6 +38,7 @@ export function genMarkStyle() {
       style += `
         ${unknownSelector} {
           color: var(--wh-bg-color-0);
+        hover: pointer
         }
         ${contextSelector} {
           color: var(--wh-bg-color-1);
@@ -47,6 +50,7 @@ export function genMarkStyle() {
         ${unknownSelector} {
           color: var(--wh-text-color-0);
           background-color: var(--wh-bg-color-0);
+        hover: pointer
 
         }
         ${contextSelector} {
@@ -61,6 +65,7 @@ export function genMarkStyle() {
           color: var(--wh-text-color-0);
           background-color: var(--wh-bg-color-0);
           text-decoration: underline solid var(--wh-text-color-0) 0.1em;
+        hover: pointer
 
         }
         ${contextSelector} {
@@ -74,6 +79,7 @@ export function genMarkStyle() {
       style += `
         ${unknownSelector} {
           text-decoration: underline dashed var(--wh-bg-color-0);
+        hover: pointer
         }
         ${contextSelector} {
           text-decoration: underline dashed var(--wh-bg-color-1);
@@ -125,6 +131,7 @@ export function genMarkStyle() {
       ${unknownSelector} {
           color: var(--wh-text-color-0);
           background-color: var(--wh-bg-color-0);
+        hover: pointer
 
         }
         ${contextSelector} {

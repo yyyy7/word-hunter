@@ -21,24 +21,24 @@
     "fmt": "prettier --write '**/*.{tsx,ts,json,css,md}'"
   },
   "devDependencies": {
-    "@crxjs/vite-plugin": "^2.0.0-beta.23",
+    "@crxjs/vite-plugin": "2.0.0-beta.26",
     "@types/chrome": "^0.0.263",
-    "daisyui": "^4.9.0",
+    "daisyui": "^4.12.14",
     "postcss-import": "^16.1.0",
-    "postcss-nesting": "^12.1.0",
-    "prettier": "^3.2.5",
-    "typescript": "^5.4.3",
-    "vite": "^5.2.7",
+    "postcss-nesting": "^12.1.5",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11",
     "vite-plugin-solid": "^2.10.2"
   },
   "dependencies": {
     "@thisbeyond/solid-dnd": "^0.7.5",
     "@webcomponents/custom-elements": "^1.6.0",
     "component-register": "0.8.3",
-    "pnpm": "^9.1.1",
-    "solid-element": "^1.8.0",
-    "solid-js": "^1.8.16",
-    "tailwindcss": "^3.4.3"
+    "pnpm": "^9.13.2",
+    "solid-element": "^1.9.1",
+    "solid-js": "^1.9.3",
+    "tailwindcss": "^3.4.15"
   },
   "packageManager": "pnpm@7.10.0+sha512.0c68dc2773801d1b72a9925e93a3b3a8b8abee1a8d69ac97e05c4c2925e59e981045566c5368edca6fc5951d4f4b85664b2fa9d4fb3f68fcfada21cd1b479179"
 }
