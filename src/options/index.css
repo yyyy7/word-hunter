@@ -2,101 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --p-page: 8px;
-  --pr-page: 3px;
-  --px-block: 18px;
-  --pb-block: 8px;
-  --h-block-header: 44px;
-  --font-system: system-ui;
-  --rounded-block: 12px;
-  --text-sm: 14px;
-  --text-xs: 12px;
-  --text-xxs: 10px;
-
-  --bg-page: #eceff7;
-  --bg-block: #fff;
-  --bg-focus: #ededed;
-  --bg-float-button: #d3e3fd;
-  --bg-float-button-focus: #c4d3eb;
-  --text-on-button: #041e49;
-  --border-color: #a8c7fa;
-  --divider-color: #d3e3fd;
-  --text-primary: #1f1f1f;
-  --text-secondary: #666666;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-page: #282828;
-    --bg-block: #3c3c3c;
-    --bg-focus: #494949;
-    --bg-float-button: #004a77;
-    --bg-float-button-focus: #125680;
-    --text-on-button: #125680;
-    --border-color: #047db7;
-    --divider-color: #5e5e5e;
-    --text-primary: #e3e3e3;
-    --text-secondary: #c2c2c2;
-  }
-}
-
-::-webkit-scrollbar {
-  width: 5px;
-  background-color: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  --scrollbar-thumb-bg: #a8c7fa;
-  background: var(--scrollbar-thumb-bg);
-  border-radius: 5px;
-}
-
-@media (prefers-color-scheme: dark) {
-  ::-webkit-scrollbar-thumb {
-    --scrollbar-thumb-bg: #047db7;
-  }
-}
-
-html,
-body {
-  /* background: none; */
-  background-color: var(--bg-page);
-  font-family: var(--font-system);
-  color: var(--text-secondary);
-}
-
-textarea {
-  form-sizing: content;
-}
-
 @layer components {
-  .section {
-    position: relative;
-    padding-bottom: var(--pb-block);
-    border-radius: var(--rounded-block);
-    background-color: var(--bg-block);
-    &:not(:has(h2)) {
-      padding-top: var(--pb-block);
+    .tabbar {
+        .tabs {
+            @apply space-x-1
+        }
     }
-    > div {
-      font-size: var(--text-xxs);
-      padding: 0 var(--px-block);
-    }
-    label {
-      color: var(--text-secondary);
-    }
-  }
-
-  .h2 {
-    @apply flex items-center font-[600];
-    height: var(--h-block-header);
-    margin: 0 var(--px-block);
-    color: var(--text-primary);
-    font-size: var(--text-xs);
-  }
-
-  .tooltip {
-    @apply static before:translate-x-0 before:max-w-[80vw] before:left-0 after:left-auto after:translate-x-[4px] not-italic font-normal;
-  }
 }

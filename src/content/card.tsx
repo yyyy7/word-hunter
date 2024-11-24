@@ -77,6 +77,7 @@ export const WhCard = customElement('wh-card', () => {
     markAsKnown(word)
     setCurWord('')
     hidePopupDelay(0)
+    autoPauseYTB(false)
     if (e instanceof MouseEvent && e.pageX) {
       explode(e.pageX, e.pageY)
     } else {
