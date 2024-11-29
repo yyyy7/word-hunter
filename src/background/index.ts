@@ -1,6 +1,6 @@
 import { Messages, WordMap, AllDictMap, WordContext, StorageKey, LevelKey, WordInfoMap } from '../constant'
 import { explainWord } from '../lib/openai'
-import { syncUpKnowns, getLocalValue, getAllKnownSync, addLocalKnownsLogs, removeLocalKnownsLogs } from '../lib/storage'
+import { syncUpKnowns, getLocalValue, getAllKnownSync, addLocalKnownsLogs, removeLocalKnownsLogs, setLocalValue } from '../lib/storage'
 import { settings } from '../lib/settings'
 import { triggerGoogleDriveSyncJob, syncWithDrive } from '../lib/backup/sync'
 
@@ -170,7 +170,8 @@ chrome.runtime.onConnect.addListener(async port => {
     const tabId = port.sender?.tab?.id
     autoDisconnectDelay(port, tabId)
 
-    port.onMessage.addListener(async msg => {
+    port.onMessage.addListener(async (msg, sendingPort) => {
+      const senderId = sendingPort?.sender?.tab?.id
       // here, word and words are all in origin form
       const { action, word, words, context } = msg
       switch (action) {
@@ -241,6 +242,13 @@ chrome.runtime.onConnect.addListener(async port => {
           port.postMessage({ result: htmlText, uuid })
           break
         }
+        case Messages.current_page_words:
+          getLocalValue(StorageKey.tab_words).then(_object => {
+            let object = _object ?? {}
+            object[senderId] = msg.words
+            setLocalValue(StorageKey.tab_words, object)
+          })
+          break
         case Messages.ai_explain:
           const { text, uuid } = msg
           const explain = await explainWord(word, text, settings().openai.model)

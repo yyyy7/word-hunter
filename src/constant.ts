@@ -57,7 +57,8 @@ export enum StorageKey {
   'mobile_auth_token' = 'mobile_auth_token',
   'local_knowns_log' = 'local_knowns_log',
   'unknown_words_on_current_page' = "unknown_words_on_current_page",
-  'version' = 'version'
+  'version' = 'version',
+  'tab_words' = 'tab_words'
 }
 
 export enum Messages {
@@ -70,7 +71,8 @@ export enum Messages {
   'play_audio' = 'play_audio',
   'open_youglish' = 'open_youglish',
   'fetch_html' = 'fetch_html',
-  'ai_explain' = 'ai_explain'
+  'ai_explain' = 'ai_explain',
+  'current_page_words' = 'current_page_words'
 }
 
 export const invalidTags = [

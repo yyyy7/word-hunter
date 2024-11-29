@@ -253,6 +253,10 @@ export async function getSyncValue(key: StorageKey | LegacySyncIndexKey | Bucket
   return (await chrome.storage.sync.get(key))[key]
 }
 
+export async function setLocalValue (key: StorageKey, value: any) {
+  return chrome.storage.local.set({ [key]: value })
+}
+
 /**
  * group storage.sync items by word prefix, to avoid hitting the 512 items and 8kb limit per item.
  */

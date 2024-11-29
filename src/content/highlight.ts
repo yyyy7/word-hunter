@@ -136,6 +136,7 @@ function _makeAsAllKnown(words: string[]) {
   })
 }
 
+
 function _setAllUnknown() {
     let words:string[] = [] 
     unknownHL.forEach(range => {
@@ -144,9 +145,15 @@ function _setAllUnknown() {
         words.push(word)
       }
     })
-    chrome.storage.local.set({
-      [StorageKey.unknown_words_on_current_page]: words
-    })
+    console.log('iiiiiiiiiii')
+    if (window == window.top) {
+      getMessagePort().postMessage({action: Messages.current_page_words, words})
+
+    }
+
+    //chrome.storage.local.set({
+    //  [StorageKey.unknown_words_on_current_page]: words
+    //})
 }
 
 function detachRange(range: Range) {
